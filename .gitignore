@@ -1,0 +1,51 @@
+# ---------- 密钥与环境 ----------
+.env
+.env.local
+*.key
+*.pem
+
+# ---------- 数据库 ----------
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ---------- 上传的文件 ----------
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---------- 日志 ----------
+*.log
+
+# ---------- 编辑器 / 系统 ----------
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 测试产物 ----------
+tests/shots/
+
+# ---------- 临时 ----------
+*.tmp
+tmp/
+temp/

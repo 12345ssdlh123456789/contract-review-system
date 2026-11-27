@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>企业合同智能审查系统</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236f8cff'/%3E%3Ctext x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'%3E%E5%90%88%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<script>
+  // Windows 上 localhost 可能解析到 ::1（IPv6），而后端只监听 127.0.0.1，
+  // 会导致请求挂 30 秒才超时。统一强制走 IPv4。
+  if (location.hostname === 'localhost') {
+    location.replace(location.href.replace('//localhost', '//127.0.0.1'));
+  }
+</script>
+</head>
+<body>
+
+<!-- ============================================================ 登录页 -->
+<div class="screen active" id="screenLogin">
+  <div class="login-bg" aria-hidden="true"></div>
+  <div class="login-wrap">
+    <div class="login-shell">
+
+      <section class="login-hero">
+        <div class="hero-brand">
+          <div class="brand-mark">合</div>
+          <div class="hero-brand-text">
+            <strong>ContractIQ</strong>
+            <span>合同审查工作台</span>
+          </div>
+        </div>
+
+        <h1>把合同风险<br>拦在签字之前</h1>
+        <p class="hero-sub">
+          AI 逐条读付款、违约、保密与争议解决条款，标出风险并给出修改建议；
+          法务的每一次采纳与驳回，都会回流成下一轮评测的数据。
+        </p>
+
+        <ul class="hero-points">
+          <li>
+            <span class="hp-ico">✓</span>
+            <div><b>权限下沉到 SQL 层</b><span>财务只拿到付款条款，越权数据根本不出库</span></div>
+          </li>
+          <li>
+            <span class="hp-ico">✓</span>
+            <div><b>模型不可用时降级</b><span>规则引擎兜底，界面明示「降级模式」</span></div>
+          </li>
+          <li>
+            <span class="hp-ico">✓</span>
+            <div><b>Prompt 可版本化回滚</b><span>20 份标注合同量化每一次改动</span></div>
+          </li>
+        </ul>
+
+        <div class="hero-stats">
+          <div><b>88.9%</b><span>风险召回率</span></div>
+          <div><b>20</b><span>评测合同</span></div>
+          <div><b>&lt;6s</b><span>单份审查</span></div>
+        </div>
+      </section>
+
+      <section class="login-panel">
+        <div class="login-brand">
+          <div class="brand-mark mobile-only">合</div>
+          <h1>企业合同智能审查系统</h1>
+          <p class="brand-sub">Contract Review Copilot</p>
+        </div>
+
+        <form id="loginForm" class="login-form" autocomplete="on" novalidate>
+          <label class="field">
+            <span class="field-label">用户名</span>
+            <span class="input-icon-wrap">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="text" id="loginUser" name="username" placeholder="请输入用户名" autocomplete="username" required>
+            </span>
+          </label>
+          <label class="field">
+            <span class="field-label">密码</span>
+            <span class="input-icon-wrap">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input type="password" id="loginPass" name="password" placeholder="请输入密码" autocomplete="current-password" required>
+            </span>
+          </label>
+          <div class="err" id="loginErr"></div>
+          <button type="submit" class="btn btn-primary btn-block" id="loginBtn">登 录</button>
+        </form>
+
+        <div class="demo-accounts">
+          <div class="demo-title">演示账号 · 一键填入 <code>demo123456</code></div>
+          <div class="demo-grid" id="demoGrid">
+            <button type="button" class="demo-chip" data-u="submitter">
+              <b>submitter</b><span>业务提交人</span>
+            </button>
+            <button type="button" class="demo-chip" data-u="reviewer">
+              <b>reviewer</b><span>法务审查员</span>
+            </button>
+            <button type="button" class="demo-chip" data-u="finance">
+              <b>finance</b><span>财务</span>
+            </button>
+            <button type="button" class="demo-chip" data-u="admin">
+              <b>admin</b><span>管理员</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="login-foot">
+          演示项目 · 数据均为虚构 · 模型：智谱 GLM-4-FlashX
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ 主界面 -->
+<div class="screen" id="screenApp">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand-mark sm">合</div>
+      <div class="topbar-brand">
+        <span class="topbar-title">合同审查台</span>
+        <span class="topbar-sub">Contract Review Console</span>
+      </div>
+    </div>
+
+    <nav class="tabs" id="navTabs" role="tablist" aria-label="主导航">
+      <button class="tab active" data-view="contracts" data-roles="submitter,reviewer,finance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+        合同
+      </button>
+      <button class="tab" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 4-6"/></svg>
+        数据看板
+      </button>
+      <button class="tab" data-view="eval" data-roles="admin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6L5 19a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 19l-5-10V3"/><path d="M7.5 14h9"/></svg>
+        评测
+      </button>
+      <button class="tab" data-view="audit" data-roles="admin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        审计日志
+      </button>
+      <button class="tab" data-view="prompts" data-roles="admin,reviewer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"/><path d="M9 19h6M12 5v14"/></svg>
+        Prompt 版本
+      </button>
+    </nav>
+
+    <div class="topbar-right">
+      <span class="user-chip" id="userChip">
+        <span class="avatar" id="userAvatar">—</span>
+        <span class="user-meta">
+          <span class="user-name" id="userName">—</span>
+          <span class="role-badge" id="userRole">—</span>
+        </span>
+      </span>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+        退出
+      </button>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ---------------------------------------------------- 合同视图 -->
+    <section class="view active" id="viewContracts">
+      <div class="view-head">
+        <div class="view-title">
+          <span class="eyebrow">Contracts</span>
+          <h2>合同列表</h2>
+          <p class="view-sub" id="contractScopeHint">—</p>
+        </div>
+        <div class="view-actions">
+          <span class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input type="search" id="contractSearch" class="input input-sm" placeholder="搜索合同标题…">
+          </span>
+          <button class="btn btn-primary btn-sm" id="btnNewContract">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="15" height="15"><path d="M12 5v14M5 12h14"/></svg>
+            新建合同
+          </button>
+        </div>
+      </div>
+
+      <div class="split">
+        <div class="split-left">
+          <div class="card list-card">
+            <div class="list-head">
+              <span class="list-meta" id="contractCount">—</span>
+              <span class="list-hint">按创建时间倒序</span>
+            </div>
+            <div class="contract-list" id="contractList"></div>
+            <div class="list-foot" id="contractPager"></div>
+          </div>
+        </div>
+        <div class="split-right">
+          <div class="card detail-card" id="contractDetail">
+            <div class="empty-state">
+              <span class="empty-art">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+              </span>
+              <p>从左侧选择一份合同</p>
+              <span>查看条款原文、AI 风险意见与法务反馈</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------------------------------------------- 看板视图 -->
+    <section class="view" id="viewDashboard">
+      <div class="view-head">
+        <div class="view-title">
+          <span class="eyebrow">Overview</span>
+          <h2>数据看板</h2>
+          <p class="view-sub">审查量、风险分布、成本与采纳率</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btnRefreshDash">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+          刷新
+        </button>
+      </div>
+      <div id="dashBody"></div>
+    </section>
+
+    <!-- ---------------------------------------------------- 评测视图 -->
+    <section class="view" id="viewEval">
+      <div class="view-head">
+        <div class="view-title">
+          <span class="eyebrow">Evaluation</span>
+          <h2>评测与跑分</h2>
+          <p class="view-sub">用固定的 20 份合成合同衡量 prompt 改动带来的效果变化</p>
+        </div>
+        <div class="view-actions">
+          <select id="evalPrompt" class="input input-sm"></select>
+          <button class="btn btn-ghost btn-sm" id="btnEvalRules">跑规则基线</button>
+          <button class="btn btn-primary btn-sm" id="btnEvalRun">跑一次评测</button>
+        </div>
+      </div>
+      <div id="evalBody"></div>
+    </section>
+
+    <!-- ---------------------------------------------------- 审计视图 -->
+    <section class="view" id="viewAudit">
+      <div class="view-head">
+        <div class="view-title">
+          <span class="eyebrow">Audit</span>
+          <h2>审计日志</h2>
+          <p class="view-sub">只增不改，记录每一次操作的人、时间、IP 与结果</p>
+        </div>
+        <div class="view-actions">
+          <select id="auditAction" class="input input-sm"><option value="">全部操作</option></select>
+          <button class="btn btn-ghost btn-sm" id="btnRefreshAudit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+            刷新
+          </button>
+        </div>
+      </div>
+      <div id="auditBody"></div>
+    </section>
+
+    <!-- ---------------------------------------------------- Prompt 视图 -->
+    <section class="view" id="viewPrompts">
+      <div class="view-head">
+        <div class="view-title">
+          <span class="eyebrow">Prompts</span>
+          <h2>Prompt 版本管理</h2>
+          <p class="view-sub">Prompt 是代码，改它必须能版本化、能对比、能一键回滚</p>
+        </div>
+      </div>
+      <div id="promptBody"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============================================================ 新建合同弹窗 -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <div>
+        <h3 id="modalTitle">新建合同</h3>
+        <p class="modal-sub">上传文件或粘贴正文，系统会自动分段并识别条款</p>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-tabs">
+        <button class="mtab active" data-mode="file">上传文件</button>
+        <button class="mtab" data-mode="text">粘贴文本</button>
+      </div>
+
+      <div class="mtab-panel active" id="panelFile">
+        <label class="dropzone" for="fileInput">
+          <span class="dz-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M20 16v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3"/></svg>
+          </span>
+          <b>点击选择合同文件</b>
+          <span>支持 pdf / docx / txt / md，单个文件 ≤ 20MB</span>
+          <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md">
+        </label>
+        <p class="hint">解析不通过会被直接拒单 —— 宁可拒，也不要输出错位的审查结果。</p>
+      </div>
+
+      <div class="mtab-panel" id="panelText">
+        <label class="field">
+          <span class="field-label">合同正文（按「第X条」分段）</span>
+          <span class="textarea-wrap">
+            <textarea id="textContent" class="input" rows="12" placeholder="第一条 付款方式&#10;甲方应于合同签订后支付预付款70%……&#10;&#10;第二条 违约责任&#10;……"></textarea>
+            <span id="textCounter" class="counter">0 字符</span>
+          </span>
+        </label>
+        <div id="textClauseList" class="parser-preview"></div>
+        <div id="textQuality"></div>
+      </div>
+
+      <div class="modal-row">
+        <label class="field">
+          <span class="field-label">合同标题</span>
+          <input type="text" id="newTitle" class="input" placeholder="例如：办公设备采购合同">
+        </label>
+        <label class="field">
+          <span class="field-label">合同类型</span>
+          <select id="newType" class="input">
+            <option>采购</option><option>服务</option><option>租赁</option>
+            <option>保密</option><option>其他</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="err" id="newErr"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="modalCancel">取消</button>
+      <button class="btn btn-primary" id="modalSubmit">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ 提示条 -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
